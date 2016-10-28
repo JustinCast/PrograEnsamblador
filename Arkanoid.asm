@@ -5,7 +5,7 @@ datasg segment 'data'
     ingresarApodo db 10,13, "Ingrese su nombre o apodo: ", "$" 
     max db 25 ,"$"
     long db ? ,"$"
-    apodo db 25 dup(' '),"$" 
+    apodo db 25 dup(''),"$" 
     linea db 10,13,"$"
     char db ? ,"$"
     x db ?
@@ -45,34 +45,9 @@ Inicio proc
     
 ret 
 endp     
-
-imprimirApodo proc
-                       
-lea si, apodo        
-imprimirCadena:
-    mov bh, [si]
-    mov char,bh
-    cmp bh, 0dh  ;enter en ascii
-    je Final
-    mov dl,char
-    mov ah, 02h
-    int 21h
-    inc si
-    jmp imprimirCadena
-ret
-endp           
-imprimirLinea proc
-    ;mov ah,02h
-    ;mov dh,10h
-    ;mov dl,10h
-    ;mov bx,00h
-    ;int 10h
-
-
-    ;mov ah,09h
-    ;mov dx,offset[apodo]
-    ;nt 21h */  
-    gotoxy 0,35 ;macro gotoxy
+           
+imprimirLinea proc  
+    gotoxy 0,60 ;macro gotoxy
 	mov ah,09h ;mostramos la cadena
 	lea Dx,max
 	int 21h
