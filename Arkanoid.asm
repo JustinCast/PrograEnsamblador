@@ -1,119 +1,66 @@
 stacksg segment para stack 'stack'      
 stacksg ends
 ;---------------------------------
-datasg segment 'data'
-    ingresarApodo db 10,13, "Ingrese su nombre o apodo:", '$' 
+datasg segment 'data' 
     
-    msgVidas db 10,13, "Ingrese la cantidad de vidas:",'$'
-     
-    numVidas db 0  ,'$'
     
-    max db 25 ,'$' 
     
+    max db 20 
+        
     long db ? 
     
-    apodo db 10 dup(''),'$' 
+    cadena db 10 dup ('') ,'$' 
+        
+    espacio db 20h, '$'
     
-    linea db 10,13,'$'
+    message db "Nombre o apodo: ", '$'
     
-    char db ? ,'$'
-    
-    x db ? ,'$' 
-    
-    y db ? ,'$' 
-    
-    figura db ? ,'$'    
-    
-    line db 13,10, '$'; espacios en blanco    
+    line db 13,10, '$'   
          
     cara db "1-Carita feliz", '$';    
      
     corazon db "2-Corazon", '$'; 
     
-    diamante db "3-Diamante", '$'; 
+    plataforma db "3-Plataforma", '$';
+    platform db "°°", '$' 
     
     menu db "Elija la figura a utilizar:", '$'; 
     
     otra db "4-Ingresar la figura", '$'; 
     
-    mes2 db "Ingrese la figura", '$';  
+    mes2 db "Ingrese la figura", '$';
+    char db ?; 
+  
+    figura db 01,'$'  
     
-    limUp db  0  ,'$'
+    x db ?
     
-    limDown db 25    ,'$'
+    y db ?   
     
-    opcion db ? , '$'
+    limUp db  0
     
+    limDown db 25
     
-                                         
+    opcion db ?
+    
 datasg ends
-
+;---------------------------------
 codesg segment 'code'  
-    assume ds:datasg, cs:codesg, ss:stacksg,
-
-gotoxy macro x,y  
-		mov ah,02h ;posiciona el cursor
-		mov dh,x ;fila
-		mov dl,y ;columna
-		int 10h
-endm
-         
-
-
-       
-
-Inicio: 
-    mov ax,datasg
-    mov ds,ax 
-    ;Cambio modo de video
-    mov al, 03h
-    mov ah,0
-    int 10h
-    ;;;;;;;;;;;;;;;;
-    
-    call capturaNombre
-    ;call imprimirNombre 
-    call capturarVidas
-    ;call imprimirVidas
-    call espace
-    call espace
-
-    call imprimeMenu
-    
-    lea dx,opcion
-    mov ah,01h
-    int 21h
-    ;=======
-    ;mueve la opcion ingresada por el usuario 
-    mov opcion,al
-    sub opcion,30h
-    cmp opcion,4
-    je capturaFigura
-    call asignarFigura
-      
+    assume ds:datasg, cs:codesg, ss:stacksg, 
+     
            
-imprimirNombre proc  
-    xor dx,dx 
-    mov x,0
-    mov y,60 
-    gotoxy x,y ;macro gotoxy
-	mov ah,09h ;mostramos la cadena
-	lea Dx,max
-	int 21h 
-	  
-	
-ret 
-endp
 
-posicionarCursor proc
-    mov ah,02h
-    mov dh,0
-    mov dl,60
-    int 10h
+;funcion que posiciona el cursor
+posicionarCursor proc 
+
+xor bh,bh
+mov dl,x
+mov dh,y     
+mov ah,02h  
+int 10h    
+                          
 ret
 endp
-
-
 
 imprimirFigura proc
 
@@ -125,71 +72,62 @@ imprimirFigura proc
  endp
 
 asignarFigura proc   
+sub opcion, 30h
+cmp opcion,1
+je call asignarCara
 
-    cmp opcion,1
-    je  asignarCara
-    
-    cmp opcion,2
-    je  asignarCorazon 
-          
-    cmp opcion,3
-    je asignarDiamante   
+cmp opcion,2
+je call asignarCorazon 
+      
+cmp opcion,3
+je call asignarPlataforma   
 
 ret
 endp 
 
      
-asignarDiamante:   ;asigna figura
+asignarPlataforma proc                  
+mov figura, 179
+ret
+endp
+     
+asignarCorazon proc
 
-    mov figura,04
-    ;jmp seguir
-         
-    asignarCorazon:
-    
-    mov figura,03
-    ;jmp seguir
-    
-    asignarCara:
-    
-    mov figura,01
-    ;jmp seguir         
-        
+mov figura,03
+ret 
+endp
 
-capturaNombre proc        
-  lea dx,ingresarApodo
-    mov ah,09h
-    int 21h
+asignarCara proc
+
+mov figura,01
+ret
+endp
+
+                
+; imprimir espacio
+space proc    
     
- lea dx,max   ;recibir nombre  se guarda en la cadena
-    mov ah,0ah
-    int 21h 
+ lea dx, line      ;imprimiendo espacio
+ mov ah,09h
+ int 21h
+ 
 ret
 endp 
 
-capturarVidas proc
-    lea dx, msgVidas
+ingresarNombre proc
+    lea dx, message
     mov ah,09h
+    int 21h    
+ lea dx,max   ;recibir nombre  se guarda en la cadena
+    mov ah,0ah
     int 21h
-    
-    
-    lea dx,numVidas
-    mov ah,01h
-    int 21h
-
-ret
-endp            
-
-imprimirVidas proc
-    xor dx,dx  
-    mov x,1
-    mov y,60
-    gotoxy x,y ;macro gotoxy
-	mov ah,09h ;mostramos la cadena
-	lea Dx,numVidas
-	int 21h
-ret
-endp	
-Limpiar proc 
+    call space
+    call space 
+ ret
+ endp 
+  
+  
+cls proc 
      mov ax,0600h   ;toda la pantalla
      mov bh,0fh    ;Fondo blanco, frente negro
      mov cx,0000h   ;desde fila 00, columna 
@@ -197,77 +135,243 @@ Limpiar proc
      int 10h
 
 ret 
-endp 
+endp
+            
 
-capturaFigura proc
+opcionFigura proc
 
-    call espace
-    
-    call espace
-                 
-    lea dx,mes2
-    mov ah,09h
-    int 21h
-    
-    call espace
-    call espace
-    
-    mov ah,1    ;espera el ingreso del dato
-    int 21h  
-    
-    mov figura,al
-    
-    ;jmp seguir  
+call space
+
+call space
+             
+lea dx,mes2
+mov ah,09h
+int 21h
+
+call space
+call space
+
+mov ah,1    ;espera el ingreso del dato
+int 21h  
+mov opcion,al
+mov figura,al  
               
-ret
-endp  
-
-imprimeMenu proc
-    
-    lea dx,menu
-    mov ah,09h
-    int 21h
-    
-    call espace  
-    
-    lea dx,Cara
-    mov ah,09h
-    int 21h
-    
-    call espace  
-    
-    lea dx,Corazon
-    mov ah,09h
-    int 21h
-    
-    call espace   
-    
-    lea dx,Diamante
-    mov ah,09h
-    int 21h
-    
-    call espace    
-    
-    lea dx,otra
-    mov ah,09h
-    int 21h
-       
 ret
 endp
 
+imprimirNombre proc
+   
+lea si, cadena ;lectura del nombre
+    
+continue:
 
-espace proc
-    lea dx,line
-    mov ah,09h
+    mov bh ,[si] ;se mueve la posicion de la cadena a un registro
+    
+    mov char,bh 
+  
+    cmp bh,0dh       ;si se llego al enter termina
+    je continuacion
+         
+    mov dl,char
+    mov ah,02h  ;imprimir el caracter del nombre en esa posicion
     int 21h
-ret
-endp    
-
-Final:
-     mov ax, 4c00h
-     int 21h
      
-codesg ends    
+    inc si  ;incrementar para acceder a otra
+            ;posicion
+    
+    
+    jmp continue
+    
+ ret
+endp   
+    
+   
+   
+         
+imprimirMenu proc
+          
+ call space
+ 
+ lea dx,menu
+ mov ah,09h
+ int 21h
+
+ call space  
+
+ lea dx,Cara
+ mov ah,09h
+ int 21h
+
+ call space  
+ 
+ lea dx,Corazon
+ mov ah,09h
+ int 21h
+
+ call space   
+ 
+ lea dx,plataforma
+ mov ah,09h
+ int 21h
+
+ call space    
+ 
+ lea dx,otra
+ mov ah,09h
+ int 21h
+   
+ret
+endp
+    
+;Inicio ejecucion programa	
+Inicio:        
+
+    mov ax,datasg
+    mov ds,ax 
+    call ingresarNombre
+    ;call imprimirNombre
+    call imprimirMenu   
+    call opcionFigura
+    call asignarFigura      
+continuacion:
+seguir:   
+
+mov x,50
+mov y,23 
+call posicionarCursor
+call imprimirFigura
+    
+mover:
+
+  moverArribaI:
+  
+   cmp y,0     ;limite de arriba
+   je moverAbajoI
+       
+   cmp x,0     ;limite izquierdo
+   je moverArribaD
+    
+   call posicionarCursor
+   
+    mov dl,32     
+    mov ah,02h
+    int 21h  
+   
+    dec y
+    dec x ;para un movimiento en diagonal
+
+  
+   call posicionarCursor
+   
+   ;preguntar si hay algo ahi
+   ;si si borrar barra
+   
+   call imprimirFigura
+   
+   ;preguntar si hay mas barras
+   
+   jmp moverArribaI
+               
+               
+  moverArribaD:
+  
+  cmp y,0  ;el limite de arriba
+  je moverAbajoD
+  
+  cmp x, 80  ;limite derecho 
+  je moverArribaI
+  
+  call posicionarCursor     
+  
+  
+  mov dl,32     
+  mov ah,02h
+  int 21h  
+  
+  dec y
+  inc x ;para un movimiento en diagonal
+  
+  call posicionarCursor   
+  
+   ;preguntar si hay algo ahi
+   ;si si borrar barra
+  
+  call imprimirFigura
+  
+  ;preguntar si quedan mas barras
+  
+  jmp moverArribaD
+  
+   
+  moverAbajoI:
+  
+  cmp y,23  ;el limite de abajo
+  je moverArribaI  ;habria que quitar vida
+  
+  cmp x, 0  ;limite izquierdo 
+  je moverAbajoD
+  
+  call posicionarCursor     
+  
+  
+  mov dl,32     
+  mov ah,02h
+  int 21h  
+  
+  inc y
+  dec x ;para un movimiento en diagonal
+  
+  call posicionarCursor   
+  
+   ;preguntar si hay algo ahi
+   
+   ;si si ir a moverArribaI
+  
+  call imprimirFigura
+  
+  ;preguntar si quedan mas barras
+  
+  jmp moverAbajoI
+  
+                
+                
+    moverAbajoD:
+  
+  cmp y,23  ;el limite de abajo
+  je moverArribaD   ;habria que quitar vida
+  
+  cmp x,80  ;limite izquierdo 
+  je moverAbajoI
+  
+  call posicionarCursor     
+  
+  
+  mov dl,32     
+  mov ah,02h
+  int 21h  
+  
+  inc y
+  inc x ;para un movimiento en diagonal
+  
+  call posicionarCursor   
+  
+   ;preguntar si hay algo ahi
+   
+   ;si si ir a moverArribaD
+  
+  call imprimirFigura
+  
+  ;preguntar si quedan mas barras
+  
+  jmp moverAbajoD         
+           
+           
+terminar:
 
     
-end Inicio     
+mov ax,4c00h
+int 21h 
+
+codesg ends
+end Inicio
+
