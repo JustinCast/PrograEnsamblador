@@ -22,13 +22,34 @@ datasg segment 'data'
     corazon db "2-Corazon", '$'; 
     
     plataforma db "3-Plataforma", '$';
+    
     platform db "°°", '$' 
+    
+    dificultad db ? 
     
     menu db "Elija la figura a utilizar:", '$'; 
     
     otra db "4-Ingresar la figura", '$'; 
     
     mes2 db "Ingrese la figura", '$';
+    
+    prueba db "Prueba"
+    text_size = $ - offset prueba 
+    
+    errorMsg db "Error con la lectura del archivo" ,'$'
+    
+    guardadoMsg db "Puntuacion guardada con exito!", '$'
+    
+    buffer db 20 dup(?) ;buffer de lectura del archivo
+    
+    puntuaciones db 'puntuaciones.txt',0
+    
+    auxiliar dw ? ; auxiliar para lectura de archivo
+    
+    auxiliar2 dw ? ;para guardar la direccion en memoria del archivo
+    
+    character db ? ;para imprimir caracter por caracter del buffer
+                                                      
     char db ?; 
   
     figura db 01,'$'  
@@ -48,7 +69,80 @@ datasg ends
 codesg segment 'code'  
     assume ds:datasg, cs:codesg, ss:stacksg, 
      
-           
+leerArchivo proc
+    
+    lea dx,puntuaciones
+    mov ax,3d00h  ;se abre abre archivo 
+    int 21h        
+    jc error  ;si no se puede abrir salta a 'error' 
+    
+    mov auxiliar,ax
+    mov bx,auxiliar
+    mov ah,3fh ;instruccion para leer de un dispositivo o archivo
+    mov cx,20
+    lea dx,buffer ;lee caracteres almacenados en buffer
+    int 21h        
+    jc error    
+    mov ah,3eh ;instruccion para cerrar el archivo
+    int 21h 
+ret
+endp               
+
+imprimirBuffer proc
+    xor bx,bx        ;apuntando al buffer
+    mov cx,20        ;caracteres a imprimir
+    xor si,si 
+    
+    loopImprimir:
+        mov al,buffer[bx] ;lee el caracter del buffer en la posicion indicada
+        lea dl,al    
+        mov ah,09h
+        int 21h
+     
+        inc si ;se incrementa el indice
+        loop loopImprimir   ;el ciclo se repite hasta que cx = 0
+        
+        
+    
+    
+ret
+endp    
+
+escribirEnArchivo proc  
+          ;base para apuntar los tres buffers
+   ; mov ah, 3ch
+;    mov cx, 0
+    lea dx, puntuaciones
+    mov ah,3dh ;abrir archivo 
+    mov al,02h
+    int 21h
+    
+    
+    jc error 
+    
+    mov auxiliar2,ax
+    ;escribiendo en archivo 
+    ;mov auxiliar2,ax
+    mov bx,auxiliar2 ;se obtiene el nombre del archivo
+    mov ah,40h ;instruccion para escribir en el archivo
+    mov cx,text_size
+    lea dx, prueba ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
+    ;mov cx,text_size
+    int 21h 
+    
+    ;jc error
+    ;cerrando archivo
+    mov ah,3eh
+    int 21h
+    jc error
+    
+    lea dx,guardadoMsg    ;
+    mov ah,9
+    int 21h 
+    
+
+ret 
+endp    
 
 ;funcion que posiciona el cursor
 posicionarCursor proc 
@@ -228,11 +322,16 @@ Inicio:
 
     mov ax,datasg
     mov ds,ax 
-    call ingresarNombre
+    
+    call escribirEnArchivo
+    ;call leerArchivo
+    ;call imprimirBuffer
+    ;call ingresarNombre
     ;call imprimirNombre
-    call imprimirMenu   
-    call opcionFigura
-    call asignarFigura      
+    ;call imprimirMenu   
+    ;call opcionFigura
+    ;call asignarFigura 
+    jmp terminar     
 continuacion:
 seguir:   
 
@@ -365,6 +464,11 @@ mover:
   
   jmp moverAbajoD         
            
+ 
+error:    
+lea dx,errorMsg
+    mov ah,9
+    int 21h  
            
 terminar:
 
