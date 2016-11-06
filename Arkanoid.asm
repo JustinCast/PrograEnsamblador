@@ -1,16 +1,22 @@
+include "emu8086.inc" ;para imprimir dos numeros
+  
+  
 stacksg segment para stack 'stack'      
 stacksg ends
 ;---------------------------------
 datasg segment 'data' 
     
-   
     max db 20 
         
     long db ? 
     
     cadena db 10 dup ('') ,'$'    
     
-    message db "Nombre o apodo: ",'$'
+    message db "Nombre o apodo: ",'$' 
+       
+    vidasMessage db "Vidas: ",'$' 
+    
+    ended db " ESTE ES EL FIN DEL JUEGO ",'$'
     
     line db 10,13,'$' 
     
@@ -18,7 +24,6 @@ datasg segment 'data'
     
     mVidas db "Cuantas vidas tendra? ",'$'                    
     
-    vidasMessage db "Vidas: ",'$' 
     
     presione db "Presione el boton clearScreen de la esquina Inferior Izquierda",,'$' 
     pres db "Luego presione la tecla enter",'$'
@@ -27,13 +32,17 @@ datasg segment 'data'
          
     cara db "1-Carita feliz",'$';    
      
-    corazon db "2-Corazon",'$'; 
+    corazon db "2-Corazon",'$';
+    
+    puntos db " Puntaje: ",'$' 
     
     diamante db "3-Diamante",'$';
     
     barra db "°°°°",'$' 
     
-    dificultad db ?    
+    dificultad db ?  
+    
+    casoEspecial db ?  
     
     vidas db ? ;conocer la cantidad de vidas
     
@@ -66,9 +75,13 @@ datasg segment 'data'
   
     figura db ? 
     
+    cantidadBarras db ?
+    
     x db ?
     
-    y db ?  
+    y db ?           
+    
+    puntaje db 0,'$' ; el puntaje de la persona
     
     respXI db ? ;utiles para el procedimiento de
                 ;borrar barras
@@ -77,8 +90,10 @@ datasg segment 'data'
     respXD db ?
     
     respYD db ? 
+                    
+    barraJugador db  "********",'$' 
     
-    barraJugador db  "[][][][]",'$'
+    borrar db "        ",'$'
     
     posBarraX db ?  ;manejar posicion de la barra del jugador
     
@@ -98,13 +113,15 @@ datasg segment 'data'
     
     viene db ? ;1=dai,2=dad,3=dabi,4=dabd   
     
-    
+;    
 datasg ends
-;---------------------------------
+;;---------------------------------
 codesg segment 'code'  
-    assume ds:datasg, cs:codesg, ss:stacksg, 
+    assume ds:datasg, cs:codesg, ss:stacksg,  
+
+
       
-GOTOXY  MACRO hor,ver  ;macro posiciona cursor
+GOTO  MACRO hor,ver  ;macro posiciona cursor
          xor bh,bh
          mov dl,hor
          mov dh,ver   
@@ -151,7 +168,24 @@ imprimirBuffer proc
     
     
 ret
-endp    
+endp 
+     
+     
+imprimePuntaje proc 
+    
+       
+goto 20,0
+   
+mov ah,09h
+lea dx,puntos
+int 21h
+
+mov al,puntaje
+
+CALL PRINT_NUM ;se imprime  
+
+ret
+endp
 
 escribirEnArchivo proc  
           ;base para apuntar los tres buffers
@@ -455,7 +489,9 @@ facil proc
     
 ;aqui iria el tamano de la ventana pequena
 ;luego habria que llamar una funcion que la llene con barras
-;asignar variables limites de ventana segun al tamano
+;asignar variables limites de ventana segun al tamano   
+;guardar la cantidad de barras que se hicieron en la variable cantbarras
+
 jmp mover
 ret
 endp      
@@ -463,7 +499,8 @@ endp
 medio proc
   
 ;aqui iria el tamano de la ventana pequena
-;luego habria que llamar una funcion que la llene con barras
+;luego habria que llamar una funcion que la llene con barras  
+;guardar la cantidad de barras que se hicieron en la variable cantbarras
 jmp mover
 
 ret
@@ -474,16 +511,21 @@ dificil proc
 mov ah,00h
 mov al,02h
 int 10h              
- 
+
+
+mov cantidadBarras, 1 ;la cantidad de barras que tenga el nivel
+
 ;aqui iria el tamano de la ventana pequena
-;luego habria que llamar una funcion que la llene con barras 
+;luego habria que llamar una funcion que la llene con barras            
+;guardar la cantidad de barras que se hicieron en la variable cantbarras
 
 jmp mover  ;que vayan al juego 
 ret
 endp      
 
 devolver:  
-
+  
+ 
  call imprimirFigura 
  
  cmp viene,1
@@ -502,11 +544,20 @@ devolver:
 borrarBarra proc
  
 cmp al,32  ;si lo que hay es un espacio
-je devolver
- 
+je devolver    
+            
+
 mov dl,07h
 mov ah,02h ;que suene 
 int 21h
+
+add puntaje,5 ; se suma cinco al puntaje de la persona 
+
+sub puntaje,30h 
+
+call imprimePuntaje
+
+dec cantidadBarras ;se resta una barra
 
 mov dl,32
 mov ah,02h
@@ -524,7 +575,7 @@ eliI :
 
 dec respXI ;se mueve una columna atras
 
-gotoxy respXI,respYI
+goto respXI,respYI
 
 ciclo:  
 
@@ -539,7 +590,7 @@ ciclo:
  int 21h  
  
  dec respXI ;acceder otra columna 
- gotoxy respXI,respYI ;se posiciona
+ goto respXI,respYI ;se posiciona
  
  jmp ciclo
  
@@ -547,7 +598,7 @@ eliD:
  
  inc respXD  ;ir columna adelante 
  
- gotoxy respXD,respYD
+ goto respXD,respYD
  
  cicle: 
  mov ah,08h
@@ -561,7 +612,7 @@ eliD:
  int 21h  
  
  inc  respXD ;acceder otra columna
- gotoxy respXD,respYD     
+ goto respXD,respYD     
   
  jmp cicle 
  
@@ -581,47 +632,115 @@ final:
 
 ret
 endp
+
+moverHaciaIzquierda proc    
+    
+    
+ mov bh,posBarraY
+ mov bl,posBarraX
  
-proc moverHaciaIzquierda
+ mov respYD,bh
+ mov respXD,bl
+ 
+; mov cx,8   ;seria el tamano de la barra
+; etiquet:
+;     
+;     
+;     gotoxy respXD,respYD
+;  
+;     mov dl,32
+;     mov ah,02h
+;     int 21h
+;     
+;     inc respXD
+;     
+;     loop etiquet 
+
+goto respXD,respYD
+
+mov ah,9
+lea dx,borrar
+int 21h
+     
+ dec posBarraX
+ dec posBarraX 
+ dec posBarraX
+ dec posBarraX 
+ dec posBarrax
+ 
+ goto posBarraX,posBarraY
+ call dibujarBarraJugador 
+    
     
 ret
 endp
  
-proc moverHaciaDerecha
+moverHaciaDerecha proc
  
- mov cx,8   ;seria el tamano de la barra
  mov bh,posBarraY
  mov bl,posBarraX
- etiqueta:
  
-     gotoxy bl,bh
-     
-     mov dl,32
-     mov ah,02h
-     int 21h
-     
-     loop etiqueta
+ mov respYD,bh
+ mov respXD,bl
+ 
+; mov cx,8   ;seria el tamano de la barra
+; etiqueta:
+;     
+;     
+;     gotoxy respXD,respYD
+;  
+;     mov dl,32
+;     mov ah,02h
+;     int 21h
+;     
+;     inc respXD
+;     
+;     loop etiqueta
+;      
+
+goto respXD,respYD
+
+mov ah,9
+lea dx,borrar
+int 21h
      
  inc posBarraX
+ inc posBarraX 
  inc posBarraX
+ inc posBarraX
+ inc posBarrax
  
- gotoxy posBarraX,posBarraY
+ 
+ goto posBarraX,posBarraY
  call dibujarBarraJugador  
 
 ret 
-endp
+endp   
 
-proc verificarTecla
+siguienteRevision: 
+      
   
   mov ah,00h
-  int 16h
+  int 16h   
   
-  cmp ah,0x4D
+  cmp al,'d'
   je  moverHaciaDerecha
  
-  cmp ah,0x4B          
-  je moverHaciaIzquierda
+  cmp al,'a'          
+  je moverHaciaIzquierda  
+  
+  ret
 
+
+atenderTeclado proc
+  
+  mov ah,01h
+  int 16h     
+  
+  jnz siguienteRevision 
+  
+  
+  
 ret 
 endp   
  
@@ -645,6 +764,8 @@ Inicio:
     int 21h
 
     mov opcion, al
+    
+
     
     sub opcion,30h ;se pasa a numero el dato ingresado  
     
@@ -682,7 +803,8 @@ mover:
  lea dx,presione
  int 21h
  
- call space
+ call space 
+ 
  
  mov ah,09h
  lea dx,pres
@@ -691,49 +813,54 @@ mover:
  mov ah,01h
  int 21h 
    
- gotoxy 0,0
+ goto 0,0
  
  call imprimirNombre
  
  call imprimirVidas
-
- mov x,2
-mov y,1
-
-call posicionarCursor
-call dibujarBarra
-
-mov x,9
-mov y,1
-call posicionarCursor
-call dibujarBarra
-
-mov x,16
-mov y,1
-call posicionarCursor
-call dibujarBarra
-      
-mov x,26
-mov y,1
-call posicionarCursor
-call dibujarBarra
-
-mov x,38
-mov y,1
-call posicionarCursor
-call dibujarBarra
-
-mov x,60
-mov y,1
-call posicionarCursor
-call dibujarBarra 
-
+ 
+ call imprimePuntaje
+ 
+; mov x,2
+;mov y,1
+;
+;call posicionarCursor
+;call dibujarBarra
+;
+;mov x,9
+;mov y,1
+;call posicionarCursor
+;call dibujarBarra
+;
+;mov x,16
+;mov y,1
+;call posicionarCursor
+;call dibujarBarra
+;      
+;mov x,26
+;mov y,1
+;call posicionarCursor
+;call dibujarBarra
+;
+;mov x,38
+;mov y,1
+;call posicionarCursor
+;call dibujarBarra
+;
+;mov x,60
+;mov y,1
+;call posicionarCursor
+;call dibujarBarra 
+;
 
 mov x,43
 mov y,17
 call posicionarCursor
-call dibujarBarra     
-  
+call dibujarBarra 
+
+   
+    
+moves:
  mov x,50
  mov y,23 
  
@@ -751,20 +878,15 @@ call dibujarBarra
   
  call posicionarCursor 
                         
- call imprimirFigura
+ call imprimirFigura  
+ 
+
 
 
 ;#######################  
   moverArribaI: 
   
-   mov ah,01h
-   int 16
-    
-  cmp ah,0x4D
-  je  moverHaciaDerecha
- 
-  cmp ah,0x4B          
-  je moverHaciaIzquierda
+   call atenderTeclado
   
    mov viene,1 ;saber de donde viene
      
@@ -775,13 +897,19 @@ call dibujarBarra
    mov bh,limIzq   
    cmp x,bh   ;limite izquierdo
    je moverArribaD
-    
+   
+   cmp casoEspecial,1
+   je cont
+       
    call posicionarCursor
    
     mov dl,32     
     mov ah,02h
     int 21h  
    
+   cont:
+   
+    mov casoEspecial,0  ;se reestablece casoespecial
     dec y
     dec x ;para un movimiento en diagonal
 
@@ -795,16 +923,22 @@ call dibujarBarra
    jne borrarBarra  ;si si
    
    ;preguntar si hay algo ahi
-   ;si si borrar barra
+   ;si si borrar barra 
    
-   call imprimirFigura
+   
+   call imprimirFigura   
+   
+    cmp cantidadBarras,0
+    je finDelJuego
    
    ;preguntar si hay mas barras
    
    jmp moverArribaI
                
   ;#######################        
-  moverArribaD: 
+  moverArribaD:       
+  
+  call atenderTeclado
   
   mov viene,2 ;saber de donde viene
      
@@ -816,13 +950,19 @@ call dibujarBarra
   cmp x,bh  ;limite derecho 
   je moverArribaI
   
+  cmp casoEspecial,1
+  je conti
+  
+      
   call posicionarCursor     
   
   
   mov dl,32     
   mov ah,02h
   int 21h  
-  
+    
+  conti:
+  mov casoEspecial,0 ;se reestablece 
   dec y
   inc x ;para un movimiento en diagonal
   
@@ -837,7 +977,10 @@ call dibujarBarra
    ;preguntar si hay algo ahi
    ;si si borrar barra
   
-  call imprimirFigura
+   call imprimirFigura  
+  
+   cmp cantidadBarras,0
+   je finDelJuego
   
   ;preguntar si quedan mas barras
   
@@ -845,13 +988,12 @@ call dibujarBarra
   
   
   ;#######################   
-  moverAbajoI:
+  moverAbajoI:  
+  
+  call atenderTeclado
   
   mov viene,3 ;saber de donde viene
-    
-  mov bh, limInf
-  cmp y,bh  ;el limite de abajo
-  je moverArribaI  ;habria que quitar vida
+   
      
   mov bh, limIzq
   cmp x, bh ;limite izquierdo 
@@ -872,15 +1014,27 @@ call dibujarBarra
     
    mov ah,08h
    int 10h   ;saber si hay algo en esa poscion
-        
+   
+   mov bh, limInf
+   cmp y,bh  ;el limite de abajo
+   je aux  ;habria que quitar vida
+
+    
+      
    cmp al,0
-   jne borrarBarra  ;si si                
+   jne borrarBarra  ;si si 
+              
    
    ;&&&como diferenicar las barras de la plataforma de la figura&&&
+ 
+   cmp cantidadBarras,0
+   je finDelJuego  
+  
+   
    
    ;preguntar si hay algo ahi
    ;si si ir a moverArribaI
-  
+   
   call imprimirFigura
   
   ;preguntar si quedan mas barras
@@ -889,14 +1043,12 @@ call dibujarBarra
   
                 
   ;#######################               
-  moverAbajoD:
+  moverAbajoD:          
+  
+  call atenderTeclado
   
   mov viene,4 ;saber de donde viene
      
-  mov bh, limInf
-  cmp y,bh  ;el limite de abajo
-  je moverArribaD   ;habria que quitar vida
-  
   mov bh,limDer
   cmp x,bh  ;limite izquierdo 
   je moverAbajoI
@@ -915,23 +1067,87 @@ call dibujarBarra
                              
    mov ah,08h
    int 10h   ;saber si hay algo en esa poscion
-        
+    
+   mov bh, limInf
+   cmp y,bh  ;el limite de abajo
+   je aux  ;habria que quitar vida 
+       
    cmp al,0
    jne borrarBarra  ;si si                          
         
    ;&&&como diferenicar las barras de la plataforma de la figura&&&
-        
-                        
+    
+   
+   cmp cantidadBarras,0
+   je finDelJuego 
+                       
    ;preguntar si hay algo ahi 
    ;si si ir a moverArribaD
   
-  call imprimirFigura
+   call imprimirFigura
   
+ 
   ;preguntar si quedan mas barras
   
   jmp moverAbajoD  
+  
+ 
+ brinco:
+ 
+ mov casoEspecial,1
+ cmp viene,3
+ je  moverArribaI 
+ ;!!!!!!!!!!!!!!!!!
+ cmp viene,4
+ je  moverArribaD
+ 
+  mif:  
+    
+    goto x,y
+    
+    mov dl,32
+    mov ah,02h
+    int 21h    
+    
+    goto posBarraX,PosBarraY
 
-
+    mov ah,9
+    lea dx,borrar
+    int 21h 
+    
+    
+    
+    jmp moves:
+ 
+ aux:
+ 
+ cmp al,'*'
+ je brinco
+ 
+ jmp quitarVida 
+ 
+ quitarVida:
+ 
+    dec vidas ;se resta a las vidas
+    
+    call imprimirVidas ;se imprimen las vidas
+    cmp vidas,0
+    jne mif   ;que vuelva a la posicion inicial del juego  
+       
+   
+ finDelJuego: ;etiqueta de fin de juego
+ 
+ call cls
+ ;suponer que hay que ir a guardar los puntos del jugador
+ 
+ goto 45,12
+   
+ mov ah,09h
+ lea dx,ended
+ int 21h   
+ 
+ jmp terminar                 
+                       
 error:    
 lea dx,errorMsg
     mov ah,9
@@ -941,7 +1157,12 @@ terminar:
 
     
 mov ax,4c00h
-int 21h 
+int 21h   
+
+
+DEFINE_PRINT_NUM
+DEFINE_PRINT_NUM_UNS 
+
 
 codesg ends
 end Inicio
