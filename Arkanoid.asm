@@ -2,9 +2,7 @@ stacksg segment para stack 'stack'
 stacksg ends
 ;---------------------------------
 datasg segment 'data' 
-    
-    
-    
+
     max db 20 
         
     long db ? 
@@ -23,9 +21,11 @@ datasg segment 'data'
     
     plataforma db "3-Plataforma", '$';
     
-    platform db "°°", '$' 
+    platform db 10 dup(?), '$' 
     
     dificultad db ? 
+    
+    c1 db 0  
     
     menu db "Elija la figura a utilizar:", '$'; 
     
@@ -33,12 +33,12 @@ datasg segment 'data'
     
     mes2 db "Ingrese la figura", '$';
     
-    prueba db "Prueba"
-    text_size = $ - offset prueba 
+    prueba db " Prueba " ,'$' 
+    text_size = $ - offset prueba ,'$'
     
     errorMsg db "Error con la lectura del archivo" ,'$'
     
-    guardadoMsg db "Puntuacion guardada con exito!", '$'
+    guardadoMsg db "Puntuacion guardada con exito", '$'
     
     buffer db 20 dup(?) ;buffer de lectura del archivo
     
@@ -51,6 +51,8 @@ datasg segment 'data'
     character db ? ;para imprimir caracter por caracter del buffer
                                                       
     char db ?; 
+    
+    time db ? ;para guardar el tiempo
   
     figura db 01,'$'  
     
@@ -71,19 +73,26 @@ codesg segment 'code'
      
 leerArchivo proc
     
-    lea dx,puntuaciones
-    mov ax,3d00h  ;se abre abre archivo 
-    int 21h        
+    lea dx,puntuaciones 
+    mov al,0
+    mov ah,3dh  ;se abre abre archivo 
+    int 21h
+    
+    mov auxiliar,ax        
     jc error  ;si no se puede abrir salta a 'error' 
     
-    mov auxiliar,ax
     mov bx,auxiliar
     mov ah,3fh ;instruccion para leer de un dispositivo o archivo
-    mov cx,20
+    mov cx,text_size
     lea dx,buffer ;lee caracteres almacenados en buffer
     int 21h        
     jc error    
     mov ah,3eh ;instruccion para cerrar el archivo
+    int 21h
+    
+    xor dx,dx
+    mov ah,09h
+    lea dx,buffer
     int 21h 
 ret
 endp               
@@ -102,31 +111,67 @@ imprimirBuffer proc
         inc si ;se incrementa el indice
         loop loopImprimir   ;el ciclo se repite hasta que cx = 0
         
-        
     
     
 ret
+endp 
+
+crearArchivo proc
+    
+                                      
+ret 
 endp    
 
+
+
+llenarPlataforma proc
+    mov cx,10
+    llenando:
+         mov platform[si],223 
+         inc si
+         loop llenando
+     
+    xor bh,bh
+    mov dl,10
+    mov dh,10     
+    mov ah,02h  
+    int 10h  
+         
+    mov ah,09h
+    lea dx,platform
+    int 21h     
+    
+ret
+endp    
 escribirEnArchivo proc  
-          ;base para apuntar los tres buffers
-   ; mov ah, 3ch
-;    mov cx, 0
     lea dx, puntuaciones
     mov ah,3dh ;abrir archivo 
-    mov al,02h
+    mov al,02h ;lectura/escritura
     int 21h
     
-    
+    mov auxiliar2,ax
     jc error 
     
-    mov auxiliar2,ax
+    xor cx,cx 
+    xor dx,dx
+    
+    mov ah,42h
+    mov bx,auxiliar2
+    mov al,2
+    int 21h 
     ;escribiendo en archivo 
     ;mov auxiliar2,ax
     mov bx,auxiliar2 ;se obtiene el nombre del archivo
     mov ah,40h ;instruccion para escribir en el archivo
     mov cx,text_size
     lea dx, prueba ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
+    ;mov cx,text_size
+    int 21h
+    
+    mov bx,auxiliar2 ;se obtiene el nombre del archivo
+    mov ah,40h ;instruccion para escribir en el archivo
+    mov cx,1
+    lea dx, time ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
     ;mov cx,text_size
     int 21h 
     
@@ -277,11 +322,38 @@ continue:
     jmp continue
     
  ret
-endp   
-    
+endp
+timer proc
+    xor cx,cx 
+    mov cx,5
+    next_char:
+
+        
+        ; print char:
+        add c1,30h
+        mov ah,02h
+        mov dl,c1
+        int 21h
+        
+        sub c1,30h
+        
+        ; next ascii char:
+        inc     c1
+        
+        ; set 1 million microseconds interval (1 second) 
+        ;mov cx,0fh
+        mov     dx, 4240h
+        mov     ah, 86h
+        int     15h
+            
+        
+        loop  next_char
+    add c1,30h    
+    mov al,c1    
+    mov time,al       
    
-   
-         
+ret
+endp         
 imprimirMenu proc
           
  call space
@@ -318,13 +390,25 @@ ret
 endp
     
 ;Inicio ejecucion programa	
-Inicio:        
-
-    mov ax,datasg
-    mov ds,ax 
+Inicio:
+    ;;==================
+;    MOV AX, 0A000h
+;    MOV ES, AX      
+;    mov ah,0h          ;SE CONFIGURA LA PANTALLA (MODO FACIL)
+;    MOV Al, 12h 
+;    INT 10H             ;720 x 400 
+;    ;==================   
     
-    call escribirEnArchivo
+    
+    
+    mov ax,datasg
+    mov ds,ax
+    
+    ;call timer    
+    ;call llenarPlataforma
     ;call leerArchivo
+    ;call escribirEnArchivo
+    call leerArchivo
     ;call imprimirBuffer
     ;call ingresarNombre
     ;call imprimirNombre
