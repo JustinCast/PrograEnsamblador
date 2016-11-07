@@ -214,6 +214,8 @@ mov ah,09h
 lea dx,puntos
 int 21h
 
+xor ax,ax
+
 mov al,puntaje
 
 CALL PRINT_NUM ;se imprime  
@@ -614,7 +616,7 @@ mov al,02h
 int 10h              
 
 
-mov cantidadBarras, 1 ;la cantidad de barras que tenga el nivel
+mov cantidadBarras, 7 ;la cantidad de barras que tenga el nivel
 
 ;aqui iria el tamano de la ventana pequena
 ;luego habria que llamar una funcion que la llene con barras            
@@ -652,9 +654,12 @@ mov dl,07h
 mov ah,02h ;que suene 
 int 21h
 
-add puntaje,5 ; se suma cinco al puntaje de la persona 
+inc puntaje ; se suma cinco al puntaje de la persona 
+inc puntaje
+inc puntaje
+inc puntaje
+inc puntaje
 
-sub puntaje,30h 
 
 call imprimePuntaje
 
@@ -938,37 +943,36 @@ mover:
  
  call imprimePuntaje
  
-; mov x,2
-;mov y,1
-;
-;call posicionarCursor
-;call dibujarBarra
-;
-;mov x,9
-;mov y,1
-;call posicionarCursor
-;call dibujarBarra
-;
-;mov x,16
-;mov y,1
-;call posicionarCursor
-;call dibujarBarra
-;      
-;mov x,26
-;mov y,1
-;call posicionarCursor
-;call dibujarBarra
-;
-;mov x,38
-;mov y,1
-;call posicionarCursor
-;call dibujarBarra
-;
-;mov x,60
-;mov y,1
-;call posicionarCursor
-;call dibujarBarra 
-;
+ mov x,2
+mov y,1
+
+call posicionarCursor
+call dibujarBarra
+
+mov x,9
+mov y,1
+call posicionarCursor
+call dibujarBarra
+
+mov x,16
+mov y,1
+call posicionarCursor
+call dibujarBarra
+      
+mov x,26
+mov y,1
+call posicionarCursor
+call dibujarBarra
+
+mov x,38
+mov y,1
+call posicionarCursor
+call dibujarBarra
+
+mov x,60
+mov y,1
+call posicionarCursor
+call dibujarBarra 
 
 mov x,43
 mov y,17
