@@ -1,8 +1,7 @@
 include "emu8086.inc" ;para imprimir dos numeros
   
   
-stacksg segment para stack 'stack'      
-stacksg ends
+.stack 100h
 ;---------------------------------
 datasg segment 'data' 
     max db 20 
@@ -55,11 +54,10 @@ datasg segment 'data'
     
     vidas db ? ;conocer la cantidad de vidas
     
-<<<<<<< HEAD
-    prueba db " Prueba " ,'$' 
-    text_size = $ - offset prueba ,'$'
-=======
-    menu db "Elija la figura a utilizar:",'$'; 
+    prueba db " Prueba " ,'$'   
+    
+    text_size = $ - offset prueba ,'$'  
+    
     
     tecla db ? ;guardar tecla ingresada por el usuario 
      
@@ -67,16 +65,11 @@ datasg segment 'data'
     
     mes2 db "Ingrese la figura",'$';
     
-    prueba db "Prueba",'$'
-    text_size = $ - offset prueba 
-
-    
     errorMsg db "Error con la lectura del archivo",'$'
     
 
     guardadoMsg db "Puntuacion guardada con exito", '$'
 
-    guardadoMsg db "Puntuacion guardada con exito!",'$'
 
     
     buffer db 20 dup(?) ;buffer de lectura del archivo
@@ -131,7 +124,11 @@ datasg segment 'data'
     
     opcion db ?   
     
-    viene db ? ;1=dai,2=dad,3=dabi,4=dabd   
+    viene db ? ;1=dai,2=dad,3=dabi,4=dabd 
+    
+    arrayPrueba db 59,37,98,0,28,67,1,78,81,40 
+    
+    
     
 ;    
 datasg ends
@@ -173,7 +170,7 @@ leerArchivo proc
     xor dx,dx
     mov ah,09h
     lea dx,buffer
-    int 21h 
+    int 21h  
 ret
 endp               
 
@@ -196,6 +193,26 @@ imprimirBuffer proc
 ret
 endp 
 
+
+llenarPlataforma proc
+    mov cx,10
+    llenando:
+         mov platform[si],223 
+         inc si
+         loop llenando
+     
+    xor bh,bh
+    mov dl,10
+    mov dh,10     
+    mov ah,02h  
+    int 10h  
+         
+    mov ah,09h
+    lea dx,platform
+    int 21h     
+    
+ret
+endp
 
 crearArchivo proc
     
@@ -223,28 +240,7 @@ CALL PRINT_NUM ;se imprime
 ret
 endp
 
-
-
-
-llenarPlataforma proc
-    mov cx,10
-    llenando:
-         mov platform[si],223 
-         inc si
-         loop llenando
-     
-    xor bh,bh
-    mov dl,10
-    mov dh,10     
-    mov ah,02h  
-    int 10h  
-         
-    mov ah,09h
-    lea dx,platform
-    int 21h     
-    
-ret
-endp    
+   
 escribirEnArchivo proc  
     lea dx, puntuaciones
     mov ah,3dh ;abrir archivo 
@@ -289,7 +285,8 @@ escribirEnArchivo proc
     
 
 ret 
-endp    
+endp 
+    
 
 ;funcion que posiciona el cursor
 posicionarCursor proc 
@@ -327,7 +324,7 @@ solicitarVidas proc
  sub bh,30h ;conversion numerica 
   
  mov vidas, bh ;asignacion de vidas
-
+ 
     
 ret
 endp
@@ -478,7 +475,6 @@ continue:
 finalize:
     
  ret
-<<<<<<< HEAD
 endp
 timer proc
     xor cx,cx 
@@ -511,7 +507,7 @@ timer proc
    
 ret
 endp         
-=======
+
 endp   
     
    
@@ -536,7 +532,6 @@ int 21h
 ret
 endp
          
->>>>>>> origin/master
 imprimirMenu proc
           
  call space
@@ -644,7 +639,7 @@ devolver:
  je  moverAbajoD
 
 
-borrarBarra proc
+borrarBarra proc  
  
 cmp al,32  ;si lo que hay es un espacio
 je devolver    
@@ -848,7 +843,94 @@ atenderTeclado proc
   
   
 ret 
-endp   
+endp 
+
+ordenamiento_burbuja proc
+;se ordena de forma ascendente    
+; input : SI=offset direccion del array
+; : BX=tamano del array
+; output : no se sabe
+
+;se ingresan los valores de los registros a la pila
+push ax
+push bx
+push cx 
+push dx
+push di 
+
+mov ax, si ;ax=si
+mov cx, bx ;cx=bx
+dec cx ; cx=cx-1
+
+loop_exterior:
+mov bx, cx ; set BX=CX
+
+mov si, ax ; set SI=AX
+mov di, ax ; set DI=AX
+inc di ; set DI=DI+1
+
+loop_interior:l
+mov dl, [si] ; set DL=[SI]
+
+cmp dl, [di] ; comparando
+jng intercambio ; salta a intercambio si dl<[di]
+
+xchg dl, [di] ; set DL=[DI], [DI]=DL
+mov [si], dl ; set [SI]=DL
+
+intercambio: 
+inc si ; set SI=SI+1
+inc di ; set DI=DI+1
+
+dec bx ; set BX=BX-1
+jnz loop_interior ; salta a loop_interior si bx!=0
+loop loop_exterior ; salta a loop_exterior mientras CX!=0
+
+;se sacan los valores en pila
+pop di 
+pop dx 
+pop cx 
+pop bx 
+pop ax     
+ret
+endp 
+
+outdec proc
+; se despliega un numero decimal
+; entrada : ax
+; output : no se sabe
+
+;ingresando valores a la pila
+push bx 
+push cx 
+push cx 
+
+xor cx, cx ; limpiando
+mov bx, 10 ; tamano BX=10
+
+output: 
+xor dx, dx 
+div bx ; se divide ax entre bx
+push dx ; ingresando el valor de dx a la pila
+inc cx 
+or ax, ax ; toma el or de ax con ax
+jne output ; salta a la etiqueta si la bandera ZF=0
+
+mov ah, 2 ;funcion de salida
+
+display: 
+pop dx ; saca el valor de dx almacenado en pila
+or dl, 30h ; se convierte de decimal a codigo ascii
+int 21h 
+loop display 
+
+;saca el valor en pila de cada uno de los registros
+pop dx 
+pop cx
+pop bx 
+
+ret 
+endp
  
 ;Inicio ejecucion programa	
 Inicio:
@@ -865,36 +947,36 @@ Inicio:
     mov ax,datasg
     mov ds,ax
     
-<<<<<<< HEAD
-    ;call timer    
+
+    call timer    
     ;call llenarPlataforma
-=======
+
     ;call escribirEnArchivo
->>>>>>> origin/master
+
     ;call leerArchivo
     ;call escribirEnArchivo
-    call leerArchivo
+    ;call leerArchivo
     ;call imprimirBuffer
-    call ingresarNombre
-    call imprimirNombre  
+    ;call ingresarNombre
+    ;call imprimirNombre  
     
-    call imprimirMenu
+    ;call imprimirMenu
     
-    call space
+    ;call space
     
-    mov ah,1    ;espera el ingreso del dato
-    int 21h
-
-    mov opcion, al
-    
-
-    
-    sub opcion,30h ;se pasa a numero el dato ingresado  
-    
-    cmp opcion,4
-    je capturaFigura
-    
-    call asignarFigura   
+    ;mov ah,1    ;espera el ingreso del dato
+;    int 21h
+;
+;    mov opcion, al
+;    
+;
+;    
+;    sub opcion,30h ;se pasa a numero el dato ingresado  
+;    
+;    cmp opcion,4
+;    je capturaFigura
+;    
+;    call asignarFigura   
     
    
 
