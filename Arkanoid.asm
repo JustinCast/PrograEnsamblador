@@ -57,7 +57,8 @@ datasg segment 'data'
     prueba db " Prueba " ,'$'   
     
     text_size = $ - offset prueba ,'$'  
-    
+            
+    finalMessage db "Tu puntuacion fue ",'$'
     
     tecla db ? ;guardar tecla ingresada por el usuario 
      
@@ -82,17 +83,25 @@ datasg segment 'data'
     
     character db ? ;para imprimir caracter por caracter del buffer
                                                       
-    char db ?; 
+    char db ?;  
+    
+    time2 db ?;prueba de tiempo   
+    
+    temp dw ? ;util para calcular puntuacion final
     
     time db ? ;para guardar el tiempo
   
     figura db ? 
     
-    cantidadBarras db ?
+    cantidadBarras db ?  
+    
+    constant db 100  ;para el calculo de la puntuacion
     
     x db ?
     
-    y db ?           
+    y db ? 
+    
+    total db ?          
     
     puntaje db 0,'$' ; el puntaje de la persona
     
@@ -475,7 +484,20 @@ continue:
 finalize:
     
  ret
+endp 
+
+timer2  proc
+    xor cx,cx
+        ; esperar untiempo determinado interrupcion
+        mov     dx, 4240h
+        mov     ah, 86h
+        int     15h      
+        
+        inc time2       
+                
+ret
 endp
+
 timer proc
     xor cx,cx 
     mov cx,5
@@ -637,7 +659,39 @@ devolver:
  ;!!!!!!!!!!!!!!!!!
  cmp viene,4
  je  moverAbajoD
-
+      
+               
+;calculo del puntaje del jugador
+calcularTotal proc  
+    
+ xor cx,cx
+ xor dx,dx
+ xor ax,ax
+ xor bx,bx
+ 
+ mov bx,time2
+ 
+ mov ax,puntaje
+ 
+ div bx
+ 
+ mov temp,ax
+ 
+ xor ax,ax
+ 
+ mov ax,temp
+ 
+ mul constant
+ 
+ mov temp,ax
+ 
+ 
+ 
+    
+ret
+endp
+       
+      
 
 borrarBarra proc  
  
@@ -869,7 +923,7 @@ ordenamiento_burbuja proc
     mov di, ax ; set DI=AX
     inc di ; set DI=DI+1
     
-    loop_interior:l
+    loop_interior:
     mov dl, [si] ; set DL=[SI]
     
     cmp dl, [di] ; comparando
@@ -948,7 +1002,7 @@ Inicio:
     mov ds,ax
     
 
-    call timer    
+    ;call timer    
     ;call llenarPlataforma
 
     ;call escribirEnArchivo
@@ -957,26 +1011,25 @@ Inicio:
     ;call escribirEnArchivo
     ;call leerArchivo
     ;call imprimirBuffer
-    ;call ingresarNombre
-    ;call imprimirNombre  
+    call ingresarNombre
+    call imprimirNombre  
     
-    ;call imprimirMenu
+    call imprimirMenu
     
-    ;call space
+    call space
     
-    ;mov ah,1    ;espera el ingreso del dato
-;    int 21h
+    mov ah,1    ;espera el ingreso del dato
+    int 21h
 ;
-;    mov opcion, al
+       mov opcion, al
 ;    
 ;
 ;    
-;    sub opcion,30h ;se pasa a numero el dato ingresado  
+      sub opcion,30h ;se pasa a numero el dato ingresado  
 ;    
-;    cmp opcion,4
-;    je capturaFigura
-;    
-;    call asignarFigura   
+      cmp opcion,4
+      je capturaFigura
+    call asignarFigura   
     
    
 
@@ -1088,7 +1141,11 @@ moves:
 
 ;#######################  
   moverArribaI: 
-  
+               
+   
+   call timer2
+               
+               
    call atenderTeclado
   
    mov viene,1 ;saber de donde viene
@@ -1110,7 +1167,7 @@ moves:
     mov ah,02h
     int 21h  
    
-   cont:
+   cont: 
    
     mov casoEspecial,0  ;se reestablece casoespecial
     dec y
@@ -1139,7 +1196,11 @@ moves:
    jmp moverArribaI
                
   ;#######################        
-  moverArribaD:       
+  moverArribaD:  
+  
+  
+  call timer2
+        
   
   call atenderTeclado
   
@@ -1164,7 +1225,8 @@ moves:
   mov ah,02h
   int 21h  
     
-  conti:
+  conti:     
+  
   mov casoEspecial,0 ;se reestablece 
   dec y
   inc x ;para un movimiento en diagonal
@@ -1193,6 +1255,8 @@ moves:
   ;#######################   
   moverAbajoI:  
   
+  call timer2     
+       
   call atenderTeclado
   
   mov viene,3 ;saber de donde viene
@@ -1203,8 +1267,7 @@ moves:
   je moverAbajoD
   
   call posicionarCursor     
-  
-  
+   
   mov dl,32     
   mov ah,02h
   int 21h  
@@ -1213,7 +1276,7 @@ moves:
   dec x ;para un movimiento en diagonal
   
   call posicionarCursor   
-   
+  
     
    mov ah,08h
    int 10h   ;saber si hay algo en esa poscion
@@ -1246,7 +1309,10 @@ moves:
   
                 
   ;#######################               
-  moverAbajoD:          
+  moverAbajoD:  
+  
+  call timer2   
+                        
   
   call atenderTeclado
   
@@ -1266,8 +1332,9 @@ moves:
   inc y
   inc x ;para un movimiento en diagonal
   
-  call posicionarCursor   
-                             
+  call posicionarCursor
+  
+               
    mov ah,08h
    int 10h   ;saber si hay algo en esa poscion
     
@@ -1358,7 +1425,23 @@ lea dx,errorMsg
            
 terminar:
 
-    
+xor ax,ax
+mov al,time2
+
+call PRINT_NUM 
+
+call calcularTotal
+goto 45,20 
+
+mov ah,09h
+lea dx,finalMessage
+int 21h
+
+xor ax,ax
+mov ax,temp
+
+call PRINT_NUM
+ 
 mov ax,4c00h
 int 21h   
 
