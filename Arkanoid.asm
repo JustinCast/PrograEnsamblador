@@ -852,82 +852,82 @@ ordenamiento_burbuja proc
 ; output : no se sabe
 
 ;se ingresan los valores de los registros a la pila
-push ax
-push bx
-push cx 
-push dx
-push di 
-
-mov ax, si ;ax=si
-mov cx, bx ;cx=bx
-dec cx ; cx=cx-1
-
-loop_exterior:
-mov bx, cx ; set BX=CX
-
-mov si, ax ; set SI=AX
-mov di, ax ; set DI=AX
-inc di ; set DI=DI+1
-
-loop_interior:l
-mov dl, [si] ; set DL=[SI]
-
-cmp dl, [di] ; comparando
-jng intercambio ; salta a intercambio si dl<[di]
-
-xchg dl, [di] ; set DL=[DI], [DI]=DL
-mov [si], dl ; set [SI]=DL
-
-intercambio: 
-inc si ; set SI=SI+1
-inc di ; set DI=DI+1
-
-dec bx ; set BX=BX-1
-jnz loop_interior ; salta a loop_interior si bx!=0
-loop loop_exterior ; salta a loop_exterior mientras CX!=0
-
-;se sacan los valores en pila
-pop di 
-pop dx 
-pop cx 
-pop bx 
-pop ax     
-ret
-endp 
-
-outdec proc
-; se despliega un numero decimal
-; entrada : ax
-; output : no se sabe
-
-;ingresando valores a la pila
-push bx 
-push cx 
-push cx 
-
-xor cx, cx ; limpiando
-mov bx, 10 ; tamano BX=10
-
-output: 
-xor dx, dx 
-div bx ; se divide ax entre bx
-push dx ; ingresando el valor de dx a la pila
-inc cx 
-or ax, ax ; toma el or de ax con ax
-jne output ; salta a la etiqueta si la bandera ZF=0
-
-mov ah, 2 ;funcion de salida
-
-display: 
-pop dx ; saca el valor de dx almacenado en pila
-or dl, 30h ; se convierte de decimal a codigo ascii
-int 21h 
-loop display 
-
-;saca el valor en pila de cada uno de los registros
-pop dx 
-pop cx
-pop bx 
+    push ax
+    push bx
+    push cx 
+    push dx
+    push di 
+    
+    mov ax, si ;ax=si
+    mov cx, bx ;cx=bx
+    dec cx ; cx=cx-1
+    
+    loop_exterior:
+    mov bx, cx ; set BX=CX
+    
+    mov si, ax ; set SI=AX
+    mov di, ax ; set DI=AX
+    inc di ; set DI=DI+1
+    
+    loop_interior:l
+    mov dl, [si] ; set DL=[SI]
+    
+    cmp dl, [di] ; comparando
+    jng intercambio ; salta a intercambio si dl<[di]
+    
+    xchg dl, [di] ; set DL=[DI], [DI]=DL
+    mov [si], dl ; set [SI]=DL
+    
+    intercambio: 
+    inc si ; set SI=SI+1
+    inc di ; set DI=DI+1
+    
+    dec bx ; set BX=BX-1
+    jnz loop_interior ; salta a loop_interior si bx!=0
+    loop loop_exterior ; salta a loop_exterior mientras CX!=0
+    
+    ;se sacan los valores en pila
+    pop di 
+    pop dx 
+    pop cx 
+    pop bx 
+    pop ax     
+    ret
+    endp 
+    
+    outdec proc
+    ; se despliega un numero decimal
+    ; entrada : ax
+    ; output : no se sabe
+    
+    ;ingresando valores a la pila
+    push bx 
+    push cx 
+    push cx 
+    
+    xor cx, cx ; limpiando
+    mov bx, 10 ; tamano BX=10
+    
+    output: 
+    xor dx, dx 
+    div bx ; se divide ax entre bx
+    push dx ; ingresando el valor de dx a la pila
+    inc cx 
+    or ax, ax ; toma el or de ax con ax
+    jne output ; salta a la etiqueta si la bandera ZF=0
+    
+    mov ah, 2 ;funcion de salida
+    
+    display: 
+    pop dx ; saca el valor de dx almacenado en pila
+    or dl, 30h ; se convierte de decimal a codigo ascii
+    int 21h 
+    loop display 
+    
+    ;saca el valor en pila de cada uno de los registros
+    pop dx 
+    pop cx
+    pop bx 
 
 ret 
 endp
