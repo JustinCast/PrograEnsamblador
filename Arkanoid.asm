@@ -4,7 +4,7 @@ include "emu8086.inc" ;para imprimir dos numeros
 .stack 100h
 ;---------------------------------
 datasg segment 'data' 
-    max db 20 
+    max db 20    
         
     long db ? 
     
@@ -40,7 +40,7 @@ datasg segment 'data'
     diamante db "3-Diamante",'$';
 
     
-    barra db "°°°°",'$' 
+    barra db "°°°",'$' 
     
 
     c1 db 0  
@@ -85,7 +85,7 @@ datasg segment 'data'
                                                       
     char db ?;  
     
-    time2 db ?;prueba de tiempo   
+    time2 dw ?;prueba de tiempo   
     
     temp dw ? ;util para calcular puntuacion final
     
@@ -103,7 +103,7 @@ datasg segment 'data'
     
     total db ?          
     
-    puntaje db 0,'$' ; el puntaje de la persona
+    puntaje dw 0,'$' ; el puntaje de la persona
     
     respXI db ? ;utiles para el procedimiento de
                 ;borrar barras
@@ -113,7 +113,7 @@ datasg segment 'data'
     
     respYD db ? 
                     
-    barraJugador db  "********",'$' 
+    barraJugador db  "{{****}}",'$' 
     
     borrar db "        ",'$'
     
@@ -125,7 +125,11 @@ datasg segment 'data'
                    ;limites de la ventana
     limInf db 23
     
-    limIzq db 0
+    limIzq db 0 
+    
+    limArriba db 1
+    
+    limAbajo db 23
     
     limDer db 79   
      
@@ -603,41 +607,137 @@ dibujarBarraJugador proc
  mov ah,09h
  int 21h
 ret
-endp      
+endp 
+
+proc dibujarDificil      ;ciclo para dibujar barras
+    
+    mov x,15
+    xor cx,cx
+    mov cx,10
+    cic:
+        
+    add x,5
+    call posicionarCursor
+    call dibujarBarra  
+  
+    loop cic
+    
+    
+    
+ret
+endp 
+
+proc dibujarMedio      ;ciclo paa dibujar barras
+    
+    mov x,15
+    xor cx,cx
+    mov cx,7
+    cicl:
+        
+    add x,7
+    call posicionarCursor
+    call dibujarBarra  
+  
+    loop cicl
+    
+    
+    
+ret
+endp 
+
+proc dibujarFacil      ;ciclo paa dibujar barras
+    
+    mov x,15
+    xor cx,cx
+    mov cx,5
+    ci:
+        
+    add x,9
+    call posicionarCursor
+    call dibujarBarra  
+  
+    loop ci
+    
+ret
+endp
 
 facil proc
     
-;aqui iria el tamano de la ventana pequena
-;luego habria que llamar una funcion que la llene con barras
-;asignar variables limites de ventana segun al tamano   
-;guardar la cantidad de barras que se hicieron en la variable cantbarras
+mov cantidadBarras,20 ;la cantidad de barras que tenga el nivel
+
+ mov limInf,23
+ mov limSup,4
+ mov limIzq,18
+ mov limDer,69
+ 
+ mov y,4
+ call dibujarfacil
+ 
+ mov y,6
+ call dibujarFacil   
+ 
+ mov y,8
+ call dibujarFacil
+ 
+ mov y,10
+ call dibujarFacil
+ 
 
 jmp mover
+
 ret
 endp      
 
 medio proc
-  
-;aqui iria el tamano de la ventana pequena
-;luego habria que llamar una funcion que la llene con barras  
-;guardar la cantidad de barras que se hicieron en la variable cantbarras
-jmp mover
+
+mov cantidadBarras,28 ;la cantidad de barras que tenga el nivel
+
+ mov limInf,23
+ mov limSup,4
+ mov limIzq,18
+ mov limDer,69
+ 
+ mov y,4
+ call dibujarMedio
+ 
+ mov y,6
+ call dibujarMedio   
+ 
+ mov y,8
+ call dibujarMedio
+ 
+ mov y,10
+ call dibujarMedio
+ 
+
+
+jmp mover  ;que vayan al juego 
+
 
 ret
 endp 
 
 dificil proc
 
-mov ah,00h
-mov al,02h
-int 10h              
 
+mov cantidadBarras,40 ;la cantidad de barras que tenga el nivel
 
-mov cantidadBarras, 7 ;la cantidad de barras que tenga el nivel
-
-;aqui iria el tamano de la ventana pequena
-;luego habria que llamar una funcion que la llene con barras            
-;guardar la cantidad de barras que se hicieron en la variable cantbarras
+ mov limInf,23
+ mov limSup,4
+ mov limIzq,18
+ mov limDer,69
+ 
+ mov y,4
+ call dibujarDificil
+ 
+ mov y,6
+ call dibujarDificil   
+ 
+ mov y,8
+ call dibujarDificil
+ 
+ mov y,10
+ call dibujarDificil
 
 jmp mover  ;que vayan al juego 
 ret
@@ -658,8 +758,13 @@ devolver:
  je  moverAbajoI 
  ;!!!!!!!!!!!!!!!!!
  cmp viene,4
- je  moverAbajoD
-      
+ je  moverAbajoD 
+ 
+ cmp viene,5
+ je arriba
+ 
+ cmp viene,6
+ je abajo   
                
 ;calculo del puntaje del jugador
 calcularTotal proc  
@@ -668,10 +773,10 @@ calcularTotal proc
  xor dx,dx
  xor ax,ax
  xor bx,bx
+       
+ mov bx,puntaje
  
- mov bx,time2
- 
- mov ax,puntaje
+ mov ax,time2
  
  div bx
  
@@ -704,9 +809,6 @@ mov ah,02h ;que suene
 int 21h
 
 inc puntaje ; se suma cinco al puntaje de la persona 
-inc puntaje
-inc puntaje
-inc puntaje
 inc puntaje
 
 
@@ -783,7 +885,13 @@ final:
  je  moverArribaI 
  ;!!!!!!!!!!!!!!!!!
  cmp viene,4
- je  moverArribaD
+ je  moverArribaD 
+ 
+ cmp viene,5
+ je abajo
+ 
+ cmp viene,6
+ je arriba
 
 ret
 endp
@@ -817,11 +925,9 @@ mov ah,9
 lea dx,borrar
 int 21h
      
- dec posBarraX
- dec posBarraX 
- dec posBarraX
  dec posBarraX 
  dec posBarrax
+ 
  
  goto posBarraX,posBarraY
  call dibujarBarraJugador 
@@ -860,11 +966,7 @@ lea dx,borrar
 int 21h
      
  inc posBarraX
- inc posBarraX 
- inc posBarraX
- inc posBarraX
  inc posBarrax
- 
  
  goto posBarraX,posBarraY
  call dibujarBarraJugador  
@@ -1041,20 +1143,9 @@ call solicitarVidas
 
 call space
 
-call solicitarNivel    
+call solicitarNivel  
 
-cmp dificultad,1
-je facil           ;funciones para ajustar largo ventana
-
-cmp dificultad,2
-je medio
-
-cmp dificultad,3
-je dificil
-    
-mover:
- 
- call space
+call space
  
  mov ah,09h
  lea dx,presione
@@ -1068,7 +1159,20 @@ mover:
  int 21h
  
  mov ah,01h
- int 21h 
+ int 21h    
+
+cmp dificultad,1
+je facil           ;funciones para ajustar largo ventana
+
+cmp dificultad,2
+je medio
+
+cmp dificultad,3
+je dificil
+    
+mover:
+ 
+ 
    
  goto 0,0
  
@@ -1077,50 +1181,17 @@ mover:
  call imprimirVidas
  
  call imprimePuntaje
+
+
  
- mov x,2
-mov y,1
-
-call posicionarCursor
-call dibujarBarra
-
-mov x,9
-mov y,1
-call posicionarCursor
-call dibujarBarra
-
-mov x,16
-mov y,1
-call posicionarCursor
-call dibujarBarra
-      
-mov x,26
-mov y,1
-call posicionarCursor
-call dibujarBarra
-
-mov x,38
-mov y,1
-call posicionarCursor
-call dibujarBarra
-
-mov x,60
-mov y,1
-call posicionarCursor
-call dibujarBarra 
-
-mov x,43
-mov y,17
-call posicionarCursor
-call dibujarBarra 
-
-   
     
-moves:
- mov x,50
+    
+moves:  
+
+ mov x,36
  mov y,23 
  
- mov posBarraX,50
+ mov posBarraX,36
  mov posBarraY,23
  
  call posicionarCursor
@@ -1129,16 +1200,13 @@ moves:
   
  mov bh,y
  dec bh  
- mov x,50
+ mov x,36
  mov y,bh
   
  call posicionarCursor 
                         
- call imprimirFigura  
- 
-
-
-
+ call imprimirFigura
+  
 ;#######################  
   moverArribaI: 
                
@@ -1319,7 +1387,7 @@ moves:
   mov viene,4 ;saber de donde viene
      
   mov bh,limDer
-  cmp x,bh  ;limite izquierdo 
+  cmp x,bh  
   je moverAbajoI
   
   call posicionarCursor     
@@ -1361,7 +1429,111 @@ moves:
   
   jmp moverAbajoD  
   
+  arriba:
+   
+   mov bh,limSup
+  cmp y,bh
+  je abajo     
+       
+  call timer2   
+                        
+  
+  call atenderTeclado
+  
+  mov viene,5 ;saber de donde viene
+     
+   
+   cmp casoEspecial,1
+   je contar
+       
+   call posicionarCursor
+   
+    mov dl,32     
+    mov ah,02h
+    int 21h  
+   
+   contar: 
+   
+    mov casoEspecial,0  ;se reestablece casoespecial
+    dec y
+    
+    call posicionarCursor
+    
+   mov ah,08h
+   int 10h   ;saber si hay algo en esa poscion
+   
+   cmp al,0
+   jne borrarBarra  ;si si                          
+        
+   ;&&&como diferenicar las barras de la plataforma de la figura&&&
+    
+   
+   cmp cantidadBarras,0
+   je finDelJuego 
+                       
+   ;preguntar si hay algo ahi 
+   ;si si ir a moverArribaD
+  
+   call imprimirFigura
+  
  
+  ;preguntar si quedan mas barras
+  
+  jmp arriba
+            
+
+ abajo:
+    
+    mov bh,limInf    
+ 
+    cmp y,bh
+    je arriba
+  call timer2   
+                        
+  call atenderTeclado
+  
+  mov viene,6 ;saber de donde viene
+     
+  
+  call posicionarCursor     
+  
+  
+  mov dl,32     
+  mov ah,02h
+  int 21h  
+  
+  inc y
+  
+  call posicionarCursor
+  
+               
+   mov ah,08h
+   int 10h   ;saber si hay algo en esa poscion
+    
+   mov bh,limAbajo
+   cmp y,bh  ;el limite de abajo
+   je aux  ;habria que quitar vida 
+       
+   cmp al,0
+   jne borrarBarra  ;si si                          
+        
+   ;&&&como diferenicar las barras de la plataforma de la figura&&&
+    
+   
+   cmp cantidadBarras,0
+   je finDelJuego 
+                       
+   ;preguntar si hay algo ahi 
+   ;si si ir a moverArribaD
+  
+   call imprimirFigura
+  
+ 
+  ;preguntar si quedan mas barras
+  
+  jmp abajo              
+    
+            
  brinco:
  
  mov casoEspecial,1
@@ -1388,11 +1560,44 @@ moves:
     
     
     jmp moves:
+  
+ cambiarDir: 
+ call posicionarCursor  
+ mov casoEspecial,1
+ cmp viene,4
+ je moverArribaI
  
+ cmp viene,3
+ je moverArribaI    
+        
+ jmp moverArribaI       
+        
+ cambiarDir2: 
+ call posicionarCursor  
+ mov casoEspecial,1
+ cmp viene,4
+ je moverArribaD
+ 
+ cmp viene,3
+ je moverArribaD  
+ 
+ jmp moverArribaD 
+ 
+ 
+ aux2:
+    mov casoEspecial,1
+    jmp arriba
+  
  aux:
  
  cmp al,'*'
- je brinco
+ je aux2
+ 
+ cmp al,'{' 
+ je cambiarDir
+ 
+ cmp al,'}'
+ je cambiarDir2
  
  jmp quitarVida 
  
@@ -1408,6 +1613,7 @@ moves:
  finDelJuego: ;etiqueta de fin de juego
  
  call cls
+ 
  ;suponer que hay que ir a guardar los puntos del jugador
  
  goto 45,12
@@ -1426,7 +1632,8 @@ lea dx,errorMsg
 terminar:
 
 xor ax,ax
-mov al,time2
+
+mov ax,time2
 
 call PRINT_NUM 
 
@@ -1437,7 +1644,8 @@ mov ah,09h
 lea dx,finalMessage
 int 21h
 
-xor ax,ax
+xor ax,ax  
+
 mov ax,temp
 
 call PRINT_NUM
