@@ -56,7 +56,7 @@ datasg segment 'data'
     
     prueba db " Prueba " ,'$'   
     
-    text_size = $ - offset prueba ,'$'  
+      
             
     finalMessage db "Tu puntuacion fue ",'$'
     
@@ -68,12 +68,9 @@ datasg segment 'data'
     
     errorMsg db "Error con la lectura del archivo",'$'
     
-
     guardadoMsg db "Puntuacion guardada con exito", '$'
-
-
     
-    buffer db 20 dup(?) ;buffer de lectura del archivo
+    buffer db ? ,'$' ;buffer de lectura del archivo
     
     puntuaciones db 'puntuaciones.txt',0
     
@@ -103,7 +100,9 @@ datasg segment 'data'
     
     total db ?          
     
-    puntaje dw 0,'$' ; el puntaje de la persona
+    puntaje db 0,'$' ; el puntaje de la persona 
+    
+    ;text_size = $ - offset puntaje ,'$'
     
     respXI db ? ;utiles para el procedimiento de
                 ;borrar barras
@@ -139,7 +138,8 @@ datasg segment 'data'
     
     viene db ? ;1=dai,2=dad,3=dabi,4=dabd 
     
-    arrayPrueba db 59,37,98,0,28,67,1,78,81,40 
+    arrayPrueba db 59    
+    text_size = $ - offset puntaje
     
     
     
@@ -161,22 +161,28 @@ GOTO  MACRO hor,ver  ;macro posiciona cursor
  ENDM
    
    
-leerArchivo proc
-    
-    lea dx,puntuaciones 
+leerArchivo proc  
     mov al,0
-    mov ah,3dh  ;se abre abre archivo 
+    mov ah,3dh  ;se abre abre archivo  
+    lea dx,puntuaciones 
     int 21h
     
     mov auxiliar,ax        
     jc error  ;si no se puede abrir salta a 'error' 
+    mov bx,ax   
     
-    mov bx,auxiliar
-    mov ah,3fh ;instruccion para leer de un dispositivo o archivo
-    mov cx,text_size
-    lea dx,buffer ;lee caracteres almacenados en buffer
-    int 21h        
-    jc error    
+    mov cx,1 ; read one character at a time 
+print: 
+lea dx, buffer 
+mov ah,3fh ; read from the opened file (its handler in bx) 
+int 21h 
+cmp ax, 0 ; how many bytes transfered? 
+jz terminar ; end program if end of file is reached (no bytes left). 
+mov al, buffer ; char is in BUF, send to ax for printing (char is in al) 
+mov ah,0eh ; print character (teletype). 
+int 10h 
+jmp print ; repeat if not end of file.  
+      
     mov ah,3eh ;instruccion para cerrar el archivo
     int 21h
     
@@ -186,6 +192,7 @@ leerArchivo proc
     int 21h  
 ret
 endp               
+               
 
 imprimirBuffer proc
     xor bx,bx        ;apuntando al buffer
@@ -246,7 +253,7 @@ int 21h
 
 xor ax,ax
 
-mov al,puntaje
+mov al,puntaje  
 
 CALL PRINT_NUM ;se imprime  
 
@@ -257,7 +264,7 @@ endp
 escribirEnArchivo proc  
     lea dx, puntuaciones
     mov ah,3dh ;abrir archivo 
-    mov al,02h ;lectura/escritura
+    mov al,01h ;lectura/escritura
     int 21h
     
     mov auxiliar2,ax
@@ -265,26 +272,22 @@ escribirEnArchivo proc
     
     xor cx,cx 
     xor dx,dx
-    
-    mov ah,42h
-    mov bx,auxiliar2
-    mov al,2
-    int 21h 
+    xor si,si
+    ;mov ah,42h
+;    mov bx,auxiliar2
+;    mov al,2
+;    int 21h 
     ;escribiendo en archivo 
-    ;mov auxiliar2,ax
+    ;mov auxiliar2,ax       
     mov bx,auxiliar2 ;se obtiene el nombre del archivo
     mov ah,40h ;instruccion para escribir en el archivo
     mov cx,text_size
-    lea dx, prueba ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
+    
+    add puntaje,30h
+    lea dx,puntaje ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
     ;mov cx,text_size
     int 21h
-    
-    mov bx,auxiliar2 ;se obtiene el nombre del archivo
-    mov ah,40h ;instruccion para escribir en el archivo
-    mov cx,1
-    lea dx, time ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
-    ;mov cx,text_size
-    int 21h 
+     
     
     ;jc error
     ;cerrando archivo
@@ -294,9 +297,10 @@ escribirEnArchivo proc
     
     lea dx,guardadoMsg    ;
     mov ah,9
-    int 21h 
+    int 21h  
     
-
+    sub temp,30h
+    
 ret 
 endp 
     
@@ -774,7 +778,7 @@ calcularTotal proc
  xor ax,ax
  xor bx,bx
        
- mov bx,puntaje
+ mov bl,puntaje
  
  mov ax,time2
  
@@ -1613,7 +1617,7 @@ moves:
  finDelJuego: ;etiqueta de fin de juego
  
  call cls
- 
+     
  ;suponer que hay que ir a guardar los puntos del jugador
  
  goto 45,12
@@ -1643,13 +1647,12 @@ goto 45,20
 mov ah,09h
 lea dx,finalMessage
 int 21h
-
-xor ax,ax  
-
-mov ax,temp
-
-call PRINT_NUM
  
+xor ax,ax 
+ 
+mov ax,temp 
+call PRINT_NUM 
+call escribirEnArchivo 
 mov ax,4c00h
 int 21h   
 
