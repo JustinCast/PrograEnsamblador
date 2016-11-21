@@ -255,6 +255,7 @@ endp
 
    
 escribirEnArchivo proc  
+    
     lea dx, puntuaciones
     mov ah,3dh ;abrir archivo 
     mov al,02h ;lectura/escritura
@@ -276,7 +277,7 @@ escribirEnArchivo proc
     mov ah,40h ;instruccion para escribir en el archivo
     mov cx,text_size
     lea dx, prueba ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
-    ;mov cx,text_size
+    
     int 21h
     
     mov bx,auxiliar2 ;se obtiene el nombre del archivo
@@ -316,7 +317,7 @@ endp
 imprimirFigura proc
 
  mov dl,figura
- mov ah,02h  ;imprimir el caracter del nombre en esa posicion
+ mov ah,02h         ;imprimir el caracter del nombre en esa posicion
  int 21h 
  
  ret
@@ -429,6 +430,11 @@ ingresarNombre proc
   
   
 cls proc 
+    
+     xor cx,cx
+     xor ax,ax
+     xor bx,bx
+     xor dx,dx
      mov ax,0600h   ;toda la pantalla
      mov bh,0fh    ;Fondo blanco, frente negro
      mov cx,0000h   ;desde fila 00, columna 
@@ -500,42 +506,7 @@ timer2  proc
         inc time2       
                 
 ret
-endp
-
-timer proc
-    xor cx,cx 
-    mov cx,5
-    next_char:
-
-        
-        ; print char:
-        add c1,30h
-        mov ah,02h
-        mov dl,c1
-        int 21h
-        
-        sub c1,30h
-        
-        ; next ascii char:
-        inc     c1
-        
-        ; set 1 million microseconds interval (1 second) 
-        ;mov cx,0fh
-        mov     dx, 4240h
-        mov     ah, 86h
-        int     15h
-            
-        
-        loop  next_char
-    add c1,30h    
-    mov al,c1    
-    mov time,al       
-   
-ret
-endp         
-
-endp   
-    
+endp    
    
 imprimirVidas proc
 
@@ -799,7 +770,10 @@ endp
       
 
 borrarBarra proc  
- 
+
+cmp cantidadBarras,0
+je finDelJuego
+
 cmp al,32  ;si lo que hay es un espacio
 je devolver    
             
@@ -815,6 +789,7 @@ inc puntaje
 call imprimePuntaje
 
 dec cantidadBarras ;se resta una barra
+
 
 mov dl,32
 mov ah,02h
@@ -904,20 +879,7 @@ moverHaciaIzquierda proc
  
  mov respYD,bh
  mov respXD,bl
- 
-; mov cx,8   ;seria el tamano de la barra
-; etiquet:
-;     
-;     
-;     gotoxy respXD,respYD
-;  
-;     mov dl,32
-;     mov ah,02h
-;     int 21h
-;     
-;     inc respXD
-;     
-;     loop etiquet 
+
 
 goto respXD,respYD
 
@@ -944,20 +906,6 @@ moverHaciaDerecha proc
  mov respYD,bh
  mov respXD,bl
  
-; mov cx,8   ;seria el tamano de la barra
-; etiqueta:
-;     
-;     
-;     gotoxy respXD,respYD
-;  
-;     mov dl,32
-;     mov ah,02h
-;     int 21h
-;     
-;     inc respXD
-;     
-;     loop etiqueta
-;      
 
 goto respXD,respYD
 
@@ -1159,8 +1107,8 @@ call space
  int 21h
  
  mov ah,01h
- int 21h    
-
+ int 21h  
+ 
 cmp dificultad,1
 je facil           ;funciones para ajustar largo ventana
 
@@ -1171,8 +1119,6 @@ cmp dificultad,3
 je dificil
     
 mover:
- 
- 
    
  goto 0,0
  
@@ -1209,15 +1155,11 @@ moves:
   
 ;#######################  
   moverArribaI: 
-               
-   
-   call timer2
-               
-               
+                 
+   call timer2     
    call atenderTeclado
-  
    mov viene,1 ;saber de donde viene
-     
+       
    mov bh,limSup
    cmp y,bh    ;limite de arriba
    je moverAbajoI
@@ -1227,51 +1169,34 @@ moves:
    je moverArribaD
    
    cmp casoEspecial,1
-   je cont
-       
+   je cont    
    call posicionarCursor
    
     mov dl,32     
     mov ah,02h
-    int 21h  
-   
-   cont: 
-   
+    int 21h    
+   cont:  
     mov casoEspecial,0  ;se reestablece casoespecial
     dec y
     dec x ;para un movimiento en diagonal
-
-  
-   call posicionarCursor
-    
+   call posicionarCursor    
    mov ah,08h
    int 10h   ;saber si hay algo en esa poscion
         
    cmp al,0
-   jne borrarBarra  ;si si
-   
-   ;preguntar si hay algo ahi
-   ;si si borrar barra 
-   
-   
+   jne borrarBarra  ;si si borrar barra
+     
    call imprimirFigura   
    
     cmp cantidadBarras,0
     je finDelJuego
    
-   ;preguntar si hay mas barras
-   
    jmp moverArribaI
                
   ;#######################        
-  moverArribaD:  
-  
-  
+  moverArribaD:   
   call timer2
-        
-  
   call atenderTeclado
-  
   mov viene,2 ;saber de donde viene
      
   mov bh, limSup
@@ -1283,126 +1208,81 @@ moves:
   je moverArribaI
   
   cmp casoEspecial,1
-  je conti
-  
-      
+  je conti      
   call posicionarCursor     
-  
-  
+ 
   mov dl,32     
   mov ah,02h
   int 21h  
-    
-  conti:     
-  
+  conti:      
   mov casoEspecial,0 ;se reestablece 
   dec y
-  inc x ;para un movimiento en diagonal
-  
-  call posicionarCursor   
-      
+  inc x ;para un movimiento en diagonal  
+  call posicionarCursor         
    mov ah,08h
    int 10h   ;saber si hay algo en esa poscion
         
    cmp al,0
    jne borrarBarra  ;si si
-   
-   ;preguntar si hay algo ahi
-   ;si si borrar barra
-  
    call imprimirFigura  
   
    cmp cantidadBarras,0
    je finDelJuego
-  
-  ;preguntar si quedan mas barras
-  
-  jmp moverArribaD
+  jmp moverArribaD      ;seguir en la etiqueta
   
   
   ;#######################   
   moverAbajoI:  
-  
   call timer2     
-       
   call atenderTeclado
-  
-  mov viene,3 ;saber de donde viene
-   
-     
+  mov viene,3 ;saber de donde viene    
   mov bh, limIzq
   cmp x, bh ;limite izquierdo 
-  je moverAbajoD
-  
+  je moverAbajoD 
   call posicionarCursor     
    
   mov dl,32     
   mov ah,02h
-  int 21h  
-  
+  int 21h   
   inc y
-  dec x ;para un movimiento en diagonal
-  
+  dec x ;para un movimiento en diagonal 
   call posicionarCursor   
-  
-    
+     
    mov ah,08h
    int 10h   ;saber si hay algo en esa poscion
    
    mov bh, limInf
    cmp y,bh  ;el limite de abajo
    je aux  ;habria que quitar vida
-
-    
-      
+       
    cmp al,0
    jne borrarBarra  ;si si 
-              
    
-   ;&&&como diferenicar las barras de la plataforma de la figura&&&
- 
-   cmp cantidadBarras,0
+   cmp cantidadBarras,0   ;ver si el juego termina
    je finDelJuego  
+ 
+   call imprimirFigura
   
-   
-   
-   ;preguntar si hay algo ahi
-   ;si si ir a moverArribaI
-   
-  call imprimirFigura
-  
-  ;preguntar si quedan mas barras
-  
-  jmp moverAbajoI
+   jmp moverAbajoI
   
                 
   ;#######################               
-  moverAbajoD:  
-  
+  moverAbajoD:   
   call timer2   
-                        
-  
   call atenderTeclado
-  
   mov viene,4 ;saber de donde viene
      
   mov bh,limDer
   cmp x,bh  
   je moverAbajoI
-  
-  call posicionarCursor     
-  
-  
+  call posicionarCursor       
   mov dl,32     
   mov ah,02h
   int 21h  
-  
   inc y
   inc x ;para un movimiento en diagonal
-  
   call posicionarCursor
-  
-               
+             
    mov ah,08h
    int 10h   ;saber si hay algo en esa poscion
     
@@ -1411,126 +1291,77 @@ moves:
    je aux  ;habria que quitar vida 
        
    cmp al,0
-   jne borrarBarra  ;si si                          
-        
-   ;&&&como diferenicar las barras de la plataforma de la figura&&&
-    
-   
+   jne borrarBarra  ;si si borrar barra                          
+     
    cmp cantidadBarras,0
    je finDelJuego 
                        
-   ;preguntar si hay algo ahi 
-   ;si si ir a moverArribaD
-  
    call imprimirFigura
-  
  
-  ;preguntar si quedan mas barras
-  
   jmp moverAbajoD  
   
-  arriba:
-   
+  arriba:  
    mov bh,limSup
   cmp y,bh
   je abajo     
-       
   call timer2   
-                        
-  
   call atenderTeclado
-  
-  mov viene,5 ;saber de donde viene
-     
-   
+  mov viene,5 ;saber de donde viene  
    cmp casoEspecial,1
    je contar
-       
    call posicionarCursor
    
     mov dl,32     
     mov ah,02h
     int 21h  
-   
    contar: 
-   
     mov casoEspecial,0  ;se reestablece casoespecial
     dec y
-    
     call posicionarCursor
     
    mov ah,08h
    int 10h   ;saber si hay algo en esa poscion
-   
    cmp al,0
    jne borrarBarra  ;si si                          
-        
-   ;&&&como diferenicar las barras de la plataforma de la figura&&&
-    
-   
-   cmp cantidadBarras,0
+
+   cmp cantidadBarras,0  ;preguntar si se acabaron las barras
    je finDelJuego 
-                       
-   ;preguntar si hay algo ahi 
-   ;si si ir a moverArribaD
-  
+
    call imprimirFigura
-  
- 
-  ;preguntar si quedan mas barras
+
   
   jmp arriba
             
 
- abajo:
-    
+ abajo: 
     mov bh,limInf    
- 
     cmp y,bh
     je arriba
-  call timer2   
-                        
+  call timer2      
   call atenderTeclado
-  
   mov viene,6 ;saber de donde viene
-     
-  
   call posicionarCursor     
-  
   
   mov dl,32     
   mov ah,02h
   int 21h  
-  
-  inc y
-  
+  inc y  
   call posicionarCursor
-  
                
    mov ah,08h
-   int 10h   ;saber si hay algo en esa poscion
-    
+   int 10h   ;saber si hay algo en esa poscion 
    mov bh,limAbajo
    cmp y,bh  ;el limite de abajo
    je aux  ;habria que quitar vida 
        
    cmp al,0
-   jne borrarBarra  ;si si                          
-        
-   ;&&&como diferenicar las barras de la plataforma de la figura&&&
-    
-   
-   cmp cantidadBarras,0
+   jne borrarBarra  ;ir a eliminar barra                        
+
+   cmp cantidadBarras,0 ; ver si quedan mas barras
    je finDelJuego 
-                       
-   ;preguntar si hay algo ahi 
-   ;si si ir a moverArribaD
-  
+
    call imprimirFigura
-  
- 
-  ;preguntar si quedan mas barras
-  
+
   jmp abajo              
     
             
