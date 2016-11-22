@@ -139,7 +139,7 @@ datasg segment 'data'
     viene db ? ;1=dai,2=dad,3=dabi,4=dabd 
     
     arrayPrueba db 59    
-    text_size = $ - offset puntaje
+    text_size db = $ - offset puntaje
     
     
     
@@ -281,19 +281,19 @@ escribirEnArchivo proc
     ;escribiendo en archivo 
     ;mov auxiliar2,ax       
     mov bx,auxiliar2 ;se obtiene el nombre del archivo
-    mov ah,40h ;instruccion para escribir en el archivo
+    mov ah,40h ;instruccion para escribir en el archivo 
+    text_size = $ - offset puntaje
     mov cx,text_size
-<<<<<<< HEAD
-=======
-    lea dx, prueba ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
+    
+    add puntaje,30h      
+    mov dx,offset puntaje ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
     
     int 21h
->>>>>>> origin/master
     
-    add puntaje,30h
-    lea dx,puntaje ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
-    ;mov cx,text_size
-    int 21h
+    ;;add puntaje,30h
+;    mov dx,64 ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
+;    ;mov cx,text_size
+;    int 21h
      
     
     ;jc error
@@ -304,9 +304,10 @@ escribirEnArchivo proc
     
     lea dx,guardadoMsg    ;
     mov ah,9
-    int 21h  
+    int 21h
     
-    sub temp,30h
+      
+    
     
 ret 
 endp 
@@ -1484,12 +1485,11 @@ goto 45,20
 mov ah,09h
 lea dx,finalMessage
 int 21h
- 
+call escribirEnArchivo 
 xor ax,ax 
  
 mov ax,temp 
-call PRINT_NUM 
-call escribirEnArchivo 
+call PRINT_NUM  
 mov ax,4c00h
 int 21h   
 
