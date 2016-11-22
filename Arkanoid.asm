@@ -1,3 +1,4 @@
+
 include "emu8086.inc" ;para imprimir dos numeros
   
   
@@ -138,8 +139,9 @@ datasg segment 'data'
     
     viene db ? ;1=dai,2=dad,3=dabi,4=dabd 
     
-    arrayPrueba db 59    
-    text_size db = $ - offset puntaje
+    arrayPrueba db 11
+       
+    text_size = $ - offset puntaje
     
     
     
@@ -177,7 +179,7 @@ lea dx, buffer
 mov ah,3fh ; read from the opened file (its handler in bx) 
 int 21h 
 cmp ax, 0 ; how many bytes transfered? 
-jz terminar ; end program if end of file is reached (no bytes left). 
+jz terminar ; end program if end of file is reached (no bytes left).   
 mov al, buffer ; char is in BUF, send to ax for printing (char is in al) 
 mov ah,0eh ; print character (teletype). 
 int 10h 
@@ -282,13 +284,10 @@ escribirEnArchivo proc
     ;mov auxiliar2,ax       
     mov bx,auxiliar2 ;se obtiene el nombre del archivo
     mov ah,40h ;instruccion para escribir en el archivo 
-    text_size = $ - offset puntaje
-    mov cx,text_size
-    
-    add puntaje,30h      
-    mov dx,offset puntaje ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
-    
-    int 21h
+    mov cx,1
+    ;add arrayPrueba,30h      
+    lea dx,arrayPrueba ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
+    int 21h 
     
     ;;add puntaje,30h
 ;    mov dx,64 ;lo que se desea escribir en el archivo (puede ser un arreglo, buffer o variable)
@@ -307,7 +306,7 @@ escribirEnArchivo proc
     int 21h
     
       
-    
+    ;sub puntaje,30h
     
 ret 
 endp 
@@ -1069,28 +1068,30 @@ Inicio:
     ;call escribirEnArchivo
 
     ;call leerArchivo
-    ;call escribirEnArchivo
+;    jmp fin
+    call escribirEnArchivo 
+    jmp fin
     ;call leerArchivo
     ;call imprimirBuffer
-    call ingresarNombre
-    call imprimirNombre  
-    
-    call imprimirMenu
-    
-    call space
-    
-    mov ah,1    ;espera el ingreso del dato
-    int 21h
-;
-       mov opcion, al
+    ;call ingresarNombre
+;    call imprimirNombre  
 ;    
-;
+;    call imprimirMenu
 ;    
-      sub opcion,30h ;se pasa a numero el dato ingresado  
-;    
-      cmp opcion,4
-      je capturaFigura
-    call asignarFigura   
+;    call space
+    
+    ;mov ah,1    ;espera el ingreso del dato
+;    int 21h
+;;
+;       mov opcion, al
+;;    
+;;
+;;    
+;      sub opcion,30h ;se pasa a numero el dato ingresado  
+;;    
+;      cmp opcion,4
+;      je capturaFigura
+;    call asignarFigura   
     
    
 
@@ -1489,7 +1490,8 @@ call escribirEnArchivo
 xor ax,ax 
  
 mov ax,temp 
-call PRINT_NUM  
+call PRINT_NUM
+fin:  
 mov ax,4c00h
 int 21h   
 
